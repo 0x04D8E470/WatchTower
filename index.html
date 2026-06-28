@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>LIA — Visual Illusionist</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Space+Grotesk:wght@400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0F0B1A;
+            --surface: #1B1428;
+            --text: #EDE7F6;
+            --text-secondary: #8A82A0;
+            --cyan: #00E5FF;
+            --magenta: #FF00FF;
+            --grid-line: rgba(138, 130, 160, 0.15);
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'Space Grotesk', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            background: var(--bg);
+        }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* Сетка на фоне */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        /* Частицы на фоне */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Типографика */
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+
+        h1 {
+            font-size: clamp(64px, 12vw, 120px);
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: clamp(36px, 6vw, 56px);
+            margin-bottom: 24px;
+        }
+
+        .mono {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--cyan);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Навигация */
+        .nav {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .nav a {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            position: relative;
+            transition: color 0.3s;
+            padding: 4px 0;
+        }
+
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--cyan);
+            transition: width 0.3s ease;
+        }
+
+        .nav a:hover {
+            color: var(--cyan);
+        }
+
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        /* Секции */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            padding: 80px 0;
+        }
+
+        /* Hero */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .hero h1 {
+            margin-bottom: 8px;
+            animation: textFlicker 3s infinite alternate;
+        }
+
+        @keyframes textFlicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow: 
+                    2px 0 var(--cyan), 
+                    -2px 0 var(--magenta);
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
+        }
+
+        .hero .subtitle {
+            font-size: clamp(16px, 3vw, 24px);
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin-bottom: 32px;
+        }
+
+        .glitch-btn {
+            display: inline-block;
+            padding: 16px 32px;
+            border: 2px solid var(--cyan);
+            font-family: var(--font-mono);
+            font-size: 14px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            text-decoration: none;
+            position: relative;
+            transition: all 0.3s;
+            background: transparent;
+        }
+
+        .glitch-btn:hover {
+            background: var(--cyan);
+            color: var(--bg);
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        }
+
+        /* Портфолио — глитч-сетка */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 4px;
+            width: 100%;
+        }
+
+        .glitch-card {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            background: var(--surface);
+            cursor: pointer;
+            border: 1px solid var(--grid-line);
+        }
+
+        .glitch-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: none;
+            transition: transform 0.3s;
+        }
+
+        /* Глитч-эффект при наведении */
+        .glitch-card:hover img {
+            animation: glitchAnim 0.5s steps(3) forwards;
+        }
+
+        @keyframes glitchAnim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-3px, -2px); }
+            80% { transform: translate(3px, 2px); }
+            100% { transform: translate(0); }
+        }
+
+        .glitch-card::before,
+        .glitch-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .glitch-card::before {
+            background: rgba(255, 0, 255, 0.25);
+            z-index: 2;
+        }
+
+        .glitch-card::after {
+            background: rgba(0, 229, 255, 0.25);
+            z-index: 3;
+        }
+
+        .glitch-card:hover::before {
+            opacity: 1;
+            animation: slideLeft 0.4s steps(4);
+        }
+
+        .glitch-card:hover::after {
+            opacity: 1;
+            animation: slideRight 0.4s steps(4);
+        }
+
+        @keyframes slideLeft {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-8px); }
+        }
+
+        @keyframes slideRight {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(8px); }
+        }
+
+        /* Текст на карточке */
+        .glitch-card .caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(transparent, var(--bg));
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text);
+            z-index: 5;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+        }
+
+        .glitch-card:hover .caption {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Секция about */
+        .about-content {
+            display: flex;
+            gap: 48px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .about-text {
+            flex: 1 1 500px;
+        }
+
+        .about-text p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .about-stats {
+            display: flex;
+            gap: 32px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: left;
+        }
+
+        .stat-number {
+            font-family: var(--font-display);
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--cyan);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Контакты */
+        .contact-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 32px;
+        }
+
+        .contact-link {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            color: var(--text);
+            text-decoration: none;
+            border-bottom: 2px solid var(--cyan);
+            transition: all 0.3s;
+            padding-bottom: 4px;
+        }
+
+        .contact-link:hover {
+            color: var(--cyan);
+            border-bottom-color: var(--magenta);
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            .nav {
+                top: 16px;
+                right: 16px;
+                gap: 8px;
+            }
+            section {
+                padding: 60px 0;
+            }
+            .about-content {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
+
+        /* Доступность */
+        :focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 4px;
+        }
+
+        /* Стилизация полосы прокрутки */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--cyan);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Навигация -->
+    <nav class="nav">
+        <a href="#hero">Главная</a>
+        <a href="#work">Работы</a>
+        <a href="#about">Обо мне</a>
+        <a href="#contact">Контакты</a>
+    </nav>
+
+    <!-- Hero -->
+    <section id="hero">
+        <div class="container hero">
+            <h1>LIA</h1>
+            <p class="subtitle">Создаю визуальные иллюзии, которые ломают восприятие. Арт, монтаж, движение.</p>
+            <a href="#work" class="glitch-btn">Смотреть работы</a>
+        </div>
+    </section>
+
+    <!-- Портфолио -->
+    <section id="work">
+        <div class="container">
+            <h2>Избранное</h2>
+            <div class="portfolio-grid">
+                <div class="glitch-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%231B1428' width='400' height='400'/%3E%3Ccircle fill='%2300E5FF' cx='200' cy='200' r='80'/%3E%3C/svg%3E" alt="Проект 1">
+                    <div class="caption">RGB SPLIT / 2025</div>
+                </div>
+                <div class="glitch-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%231B1428' width='400' height='400'/%3E%3Cpolygon fill='%23FF00FF' points='200,50 350,350 50,350'/%3E%3C/svg%3E" alt="Проект 2">
+                    <div class="caption">VOID WALK / 2025</div>
+                </div>
+                <div class="glitch-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%231B1428' width='400' height='400'/%3E%3Crect fill='%2300E5FF' x='100' y='100' width='200' height='200' /%3E%3C/svg%3E" alt="Проект 3">
+                    <div class="caption">PIXEL DRIFT / 2024</div>
+                </div>
+                <div class="glitch-card">
+                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Crect fill='%231B1428' width='400' height='400'/%3E%3Cpath fill='%23FF00FF' d='M200 50 L350 200 L200 350 L50 200 Z'/%3E%3C/svg%3E" alt="Проект 4">
+                    <div class="caption">STATIC FIELDS / 2024</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Обо мне -->
+    <section id="about">
+        <div class="container about-content">
+            <div class="about-text">
+                <h2>Кто за этим стоит</h2>
+                <p>Я Лия, и я превращаю пиксели в эмоции. Начала с коротких видео в TikTok, сейчас создаю визуальные миры для музыкантов и брендов. Моя суперсила — глитч, цвет и ритм.</p>
+                <div class="about-stats">
+                    <div class="stat">
+                        <div class="stat-number">2.4M</div>
+                        <div class="stat-label">Подписчиков</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">187</div>
+                        <div class="stat-label">Проектов</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">4</div>
+                        <div class="stat-label">Года в деле</div>
+                    </div>
+                </div>
+            </div>
+            <div style="flex: 1 1 300px; position: relative;">
+                <div style="width: 100%; aspect-ratio: 1/1; background: var(--surface); border: 1px solid var(--grid-line); display: flex; align-items: center; justify-content: center;">
+                    <span style="font-family: var(--font-mono); color: var(--cyan); font-size: 14px;">ТВОЙ АВАТАР</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Контакты -->
+    <section id="contact">
+        <div class="container">
+            <h2>Сотрудничество</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 8px;">Для коллабораций и съёмок пишите на почту или в соцсети.</p>
+            <div class="contact-links">
+                <a href="mailto:lia@illusion.art" class="contact-link">lia@illusion.art</a>
+                <a href="#" class="contact-link">TikTok</a>
+                <a href="#" class="contact-link">Instagram</a>
+                <a href="#" class="contact-link">YouTube</a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        (function() {
+            // Частицы на canvas
+            const canvas = document.getElementById('particles-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const maxParticles = 50;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 0.8;
+                    this.vy = (Math.random() - 0.5) * 0.8;
+                    this.size = Math.random() * 2 + 1;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(0, 229, 255, ${this.opacity})`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < maxParticles; i++) {
+                particles.push(new Particle());
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+                // Соединяем близкие частицы линиями
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(255, 0, 255, ${0.08 * (1 - dist / 100)})`;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animateParticles);
+            }
+            animateParticles();
+
+            // Плавное появление секций при скролле (простая обсервер)
+            const sections = document.querySelectorAll('section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            sections.forEach(section => {
+                section.style.opacity = 0;
+                section.style.transform = 'translateY(30px)';
+                section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+                observer.observe(section);
+            });
+        })();
+    </script>
+</body>
+</html>

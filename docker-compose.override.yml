@@ -1,0 +1,12 @@
+services:
+  bot:
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./tests:/app/tests
+    command: watchfiles --filter python 'python -m app'
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://watchtower:watchtower@postgres:5432/watchtower
+      REDIS_URL: redis://redis:6379/0

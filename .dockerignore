@@ -1,0 +1,12 @@
+.env
+.venv
+.git
+__pycache__
+*.pyc
+.pytest_cache
+*.egg-info
+dist
+build
+*.log
+README.md
+LICENSE
